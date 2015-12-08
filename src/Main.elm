@@ -28,8 +28,8 @@ model =
 
 -- UPDATE
 
-update : Model -> Model
-update model =
+update : (Float, Keys) -> Model -> Model
+update (dt, keys) model =
   model
 
 
@@ -89,7 +89,12 @@ view model =
 
 main : Signal Element.Element
 main =
-  Signal.map2 view Signal model (Signal.foldp update model input)
+  Signal.map view game
+
+
+game : Signal Model
+game =
+  Signal.foldp update model input
 
 
 input : Signal (Float, Keys)
