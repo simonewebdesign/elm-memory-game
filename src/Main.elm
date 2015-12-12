@@ -8,6 +8,7 @@ import Time
 import Keyboard
 --import Window
 
+
 -- MODEL
 
 type alias Model =
@@ -18,9 +19,11 @@ type alias Model =
 
 type alias Keys = { x:Int, y:Int }
 
+type Action = NoOp | Add | Subtract --ChangeColor | Add | Subtract
 
-model : Model
-model =
+
+initialModel : Model
+initialModel =
   { color = red
   , counter = 0
   }
@@ -28,9 +31,15 @@ model =
 
 -- UPDATE
 
-update : (Float, Keys) -> Model -> Model
-update (dt, keys) model =
-  model
+update : Action -> Model -> Model
+update action model =
+  case action of
+    Add ->
+      { model | counter = model.counter + 1 }
+    Subtract ->
+      { model | counter = model.counter - 1 }
+    _ ->
+      model
 
 
 -- VIEW
@@ -66,40 +75,55 @@ myCollage forms =
   Collage.collage 640 480 forms
 
 
-myForms : List Collage.Form
-myForms =
-  [ Collage.toForm redSquare
-  , makeSquare
+myForms : Model -> List Collage.Form
+myForms model =
+  [
+    --Collage.toForm redSquare
+  --, makeSquare
+  Collage.toForm (Element.show model)
   ]
 
 
 view : Model -> Element.Element
 view model =
-  myCollage myForms
+  myCollage (myForms model)
 
 
 -- MAIN
-
---main : Element.Element
---main =
---  myCollage myForms
-
-
--- SIGNALS
 
 main : Signal Element.Element
 main =
   Signal.map view game
 
 
+
+-- SIGNALS
+
 game : Signal Model
 game =
-  Signal.foldp update model input
+  Signal.foldp update initialModel input
 
 
-input : Signal (Float, Keys)
+input : Signal Action
 input =
   let
-    delta = Signal.map (\t -> t/20) (Time.fps 30)
+    x = Signal.map .x Keyboard.arrows
+    delta = Time.fps 30
+    toAction n =
+      case n of
+        -1 -> Subtract
+        0 -> NoOp
+        1 -> Add
+        _ -> NoOp
+
+    actions = Signal.map toAction x
   in
-    Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
+    Signal.sampleOn delta actions
+
+
+--input : Signal (Float, Keys)
+--input =
+--  let
+--    delta = Signal.map (\t -> t/20) (Time.fps 30)
+--  in
+--    Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
