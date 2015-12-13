@@ -6,6 +6,7 @@ import Text
 import Color exposing (Color)
 import Time
 import Keyboard
+import Window
 
 
 -- MODEL
@@ -59,9 +60,9 @@ redSquare =
   Element.color Color.red aTextElement
 
 
-myCollage : List Collage.Form -> Element
-myCollage forms =
-  Collage.collage 640 480 forms
+myCollage : (Int, Int) -> List Collage.Form -> Element
+myCollage (width, height) forms =
+  Collage.collage width height forms
 
 
 myForms : Model -> List Collage.Form
@@ -73,16 +74,16 @@ myForms model =
   ]
 
 
-view : Model -> Element
-view model =
-  myCollage (myForms model)
+view : (Int, Int) -> Model -> Element
+view (width, height) model =
+  myCollage (width, height) (myForms model)
 
 
 -- MAIN
 
 main : Signal Element
 main =
-  Signal.map view game
+  Signal.map2 view Window.dimensions game
 
 
 
