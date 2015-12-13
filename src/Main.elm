@@ -1,12 +1,11 @@
 module Main where
 
-import Graphics.Element as Element
+import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as Collage
 import Text
-import Color exposing (Color, rgb)
+import Color exposing (Color)
 import Time
 import Keyboard
---import Window
 
 
 -- MODEL
@@ -24,7 +23,7 @@ type Action = NoOp | Add | Subtract --ChangeColor | Add | Subtract
 
 initialModel : Model
 initialModel =
-  { color = red
+  { color = Color.red
   , counter = 0
   }
 
@@ -44,33 +43,23 @@ update action model =
 
 -- VIEW
 
-red : Color
-red =
-  rgb 255 0 0
-
-
-green : Color
-green =
-  rgb 0 255 0
-
-
 makeSquare : Collage.Form
 makeSquare =
   Collage.square 30
-  |> Collage.filled green
+  |> Collage.filled Color.green
 
 
-aTextElement : Element.Element
+aTextElement : Element
 aTextElement =
   Element.centered (Text.fromString "Hi there")
 
 
-redSquare : Element.Element
+redSquare : Element
 redSquare =
-  Element.color red aTextElement
+  Element.color Color.red aTextElement
 
 
-myCollage : List Collage.Form -> Element.Element
+myCollage : List Collage.Form -> Element
 myCollage forms =
   Collage.collage 640 480 forms
 
@@ -84,14 +73,14 @@ myForms model =
   ]
 
 
-view : Model -> Element.Element
+view : Model -> Element
 view model =
   myCollage (myForms model)
 
 
 -- MAIN
 
-main : Signal Element.Element
+main : Signal Element
 main =
   Signal.map view game
 
@@ -112,7 +101,6 @@ input =
     toAction n =
       case n of
         -1 -> Subtract
-        0 -> NoOp
         1 -> Add
         _ -> NoOp
 
