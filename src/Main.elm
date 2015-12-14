@@ -7,6 +7,7 @@ import Color exposing (Color)
 import Time
 import Keyboard
 import Window
+import Mouse
 
 
 -- MODEL
@@ -105,9 +106,10 @@ input =
         1 -> Add
         _ -> NoOp
 
-    actions = Signal.map toAction x
+    arrows = Signal.sampleOn delta (Signal.map toAction x)
+    clicks = Signal.map (always Add) Mouse.clicks
   in
-    Signal.sampleOn delta actions
+    Signal.merge arrows clicks
 
 
 --input : Signal (Float, Keys)
