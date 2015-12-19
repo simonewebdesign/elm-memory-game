@@ -18,9 +18,7 @@ type alias Model =
   }
 
 
-type alias Keys = { x:Int, y:Int }
-
-type Action = NoOp | Add | Subtract --ChangeColor | Add | Subtract
+type Action = NoOp | Add | Subtract
 
 
 initialModel : Model
@@ -87,9 +85,6 @@ main =
   Signal.map2 view Window.dimensions game
 
 
-
--- SIGNALS
-
 game : Signal Model
 game =
   Signal.foldp update initialModel input
@@ -110,11 +105,3 @@ input =
     clicks = Signal.map (always Add) Mouse.clicks
   in
     Signal.merge arrows clicks
-
-
---input : Signal (Float, Keys)
---input =
---  let
---    delta = Signal.map (\t -> t/20) (Time.fps 30)
---  in
---    Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
