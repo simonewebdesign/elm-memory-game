@@ -1,5 +1,6 @@
 module Main where
 
+import Array exposing (Array)
 import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as Collage
 import Text
@@ -9,14 +10,18 @@ import Keyboard
 import Window
 import Mouse
 
-
 -- MODEL
 
 type alias Model =
   { color : Color
   , counter : Int
+
+  , level : Int
+  , score : Int
+  , sequence : Array String
   }
 
+type alias Dimensions = (Int, Int)
 
 type Action = NoOp | Add | Subtract
 
@@ -25,6 +30,10 @@ initialModel : Model
 initialModel =
   { color = Color.red
   , counter = 0
+
+  , level = 1
+  , score = 0
+  , sequence = Array.empty
   }
 
 
@@ -59,24 +68,21 @@ redSquare =
   Element.color Color.red aTextElement
 
 
-myCollage : (Int, Int) -> List Collage.Form -> Element
-myCollage (width, height) forms =
-  Collage.collage width height forms
+drawSquare : Dimensions -> Color -> Collage.Form
+drawSquare (width, height) color =
+  Collage.square (toFloat (height // 2))
+  |> Collage.filled color
 
 
-myForms : Model -> List Collage.Form
-myForms model =
-  [
-    --Collage.toForm redSquare
-  --, makeSquare
-  Collage.toForm (Element.show model)
-  ]
-
-
-view : (Int, Int) -> Model -> Element
+view : Dimensions -> Model -> Element
 view (width, height) model =
-  myCollage (width, height) (myForms model)
-
+  Collage.collage width height
+    [ drawSquare (width, height) Color.red
+    , drawSquare (width, height) Color.yellow
+    , drawSquare (width, height) Color.green
+    , drawSquare (width, height) Color.blue
+    , Collage.toForm (Element.show model) -- debugging
+    ]
 
 -- MAIN
 
