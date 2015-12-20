@@ -22,6 +22,7 @@ type alias Model =
   }
 
 type alias Dimensions = (Int, Int)
+type alias Position = (Int, Int)
 
 type Action = NoOp | Add | Subtract
 
@@ -68,21 +69,60 @@ redSquare =
   Element.color Color.red aTextElement
 
 
-drawSquare : Dimensions -> Color -> Collage.Form
-drawSquare (width, height) color =
+drawPositionedSquare : Dimensions -> Position -> Color -> Collage.Form
+drawPositionedSquare (width, height) (x, y) color =
   Collage.square (toFloat (height // 2))
   |> Collage.filled color
+  |> Collage.move (toFloat x, toFloat y)
+
+
+drawSquare : Dimensions -> Color -> Collage.Form
+drawSquare (w, h) color =
+  let
+    dimensions = toFloat (h // 2)
+  in
+    Collage.square dimensions
+    |> Collage.filled color
+
+
+drawSquareElement : Dimensions -> Color -> Element
+drawSquareElement (w, h) color =
+  let
+    width = w // 2
+    height = h // 2
+  in
+    Element.empty
+    |> Element.size width height
+    |> Element.color color
+
+
+aContainer : Element
+aContainer =
+  Element.container 300 300 Element.topLeft redSquare
+  |> Element.color Color.blue
+
+
+containedSquare : Dimensions -> Element.Position -> Element -> Element
+containedSquare (w, h) pos el =
+  Element.container w h pos el
+  --|> Element.color color
 
 
 view : Dimensions -> Model -> Element
-view (width, height) model =
-  Collage.collage width height
-    [ drawSquare (width, height) Color.red
-    , drawSquare (width, height) Color.yellow
-    , drawSquare (width, height) Color.green
-    , drawSquare (width, height) Color.blue
-    , Collage.toForm (Element.show model) -- debugging
+view (w, h) model =
+  Collage.collage w h
+    --[ drawSquare (w, h) ((-w // 2), (h // 2)) Color.red
+    --, drawSquare (w, h) ((-w // 2), (-h // 2)) Color.yellow
+    --, drawSquare (w, h) ((w // 2), (h // 2)) Color.green
+    --, drawSquare (w, h) ((w // 2), (-h // 2)) Color.blue
+    [ Collage.toForm (containedSquare (w, h) Element.topLeft (drawSquareElement (w, h) Color.red))
+    , Collage.toForm (containedSquare (w, h) Element.topRight (drawSquareElement (w, h) Color.yellow))
+    , Collage.toForm (containedSquare (w, h) Element.bottomLeft (drawSquareElement (w, h) Color.green))
+    , Collage.toForm (containedSquare (w, h) Element.bottomRight (drawSquareElement (w, h) Color.blue))
+    , Collage.toForm (Element.show model)
+      |> Collage.moveY 100  -- debugging
     ]
+
 
 -- MAIN
 
