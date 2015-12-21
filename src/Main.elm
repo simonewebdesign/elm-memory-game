@@ -102,10 +102,11 @@ aContainer =
   |> Element.color Color.blue
 
 
-containedSquare : Dimensions -> Element.Position -> Element -> Element
-containedSquare (w, h) pos el =
-  Element.container w h pos el
-  --|> Element.color color
+formSquare : Dimensions -> Color -> Element.Position -> Collage.Form
+formSquare (w, h) color position =
+  drawSquareElement (w, h) color
+  |> Element.container w h position
+  |> Collage.toForm
 
 
 view : Dimensions -> Model -> Element
@@ -115,10 +116,10 @@ view (w, h) model =
     --, drawSquare (w, h) ((-w // 2), (-h // 2)) Color.yellow
     --, drawSquare (w, h) ((w // 2), (h // 2)) Color.green
     --, drawSquare (w, h) ((w // 2), (-h // 2)) Color.blue
-    [ Collage.toForm (containedSquare (w, h) Element.topLeft (drawSquareElement (w, h) Color.red))
-    , Collage.toForm (containedSquare (w, h) Element.topRight (drawSquareElement (w, h) Color.yellow))
-    , Collage.toForm (containedSquare (w, h) Element.bottomLeft (drawSquareElement (w, h) Color.green))
-    , Collage.toForm (containedSquare (w, h) Element.bottomRight (drawSquareElement (w, h) Color.blue))
+    [ formSquare (w, h) Color.red    Element.topLeft
+    , formSquare (w, h) Color.yellow Element.topRight
+    , formSquare (w, h) Color.green  Element.bottomLeft
+    , formSquare (w, h) Color.blue   Element.bottomRight
     , Collage.toForm (Element.show model)
       |> Collage.moveY 100  -- debugging
     ]
