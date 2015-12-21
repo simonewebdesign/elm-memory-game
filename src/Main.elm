@@ -3,7 +3,7 @@ module Main where
 import Array exposing (Array)
 import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as Collage
-import Color exposing (Color)
+import Color exposing (Color, red, yellow, green, blue)
 import Time
 import Keyboard
 import Window
@@ -28,7 +28,7 @@ type Action = NoOp | Add | Subtract
 
 initialModel : Model
 initialModel =
-  { color = Color.red
+  { color = red
   , counter = 0
 
   , level = 1
@@ -55,10 +55,10 @@ update action model =
 view : Dimensions -> Model -> Element
 view (w, h) model =
   Collage.collage w h
-    [ formSquare (w, h) Color.red    Element.topLeft
-    , formSquare (w, h) Color.yellow Element.topRight
-    , formSquare (w, h) Color.green  Element.bottomLeft
-    , formSquare (w, h) Color.blue   Element.bottomRight
+    [ formSquare (w, h) red    Element.topLeft
+    , formSquare (w, h) yellow Element.topRight
+    , formSquare (w, h) green  Element.bottomLeft
+    , formSquare (w, h) blue   Element.bottomRight
     , Collage.toForm (Element.show model)
       |> Collage.moveY 100  -- debugging
     ]
