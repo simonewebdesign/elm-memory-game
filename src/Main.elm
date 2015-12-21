@@ -3,6 +3,7 @@ module Main where
 import Array exposing (Array)
 import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as Collage
+import Graphics.Input   as Input
 import Color exposing (Color, red, yellow, green, blue)
 import Time
 import Keyboard
@@ -17,13 +18,14 @@ type alias Model =
 
   , level : Int
   , score : Int
-  , sequence : Array String
+  , sequence : Array Color
+  , inputSequence : Array Color
   }
 
 type alias Dimensions = (Int, Int)
 type alias Position = (Int, Int)
 
-type Action = NoOp | Add | Subtract
+type Action = NoOp | Add | Subtract | AddColor Color
 
 
 initialModel : Model
@@ -34,7 +36,13 @@ initialModel =
   , level = 1
   , score = 0
   , sequence = Array.empty
+  , inputSequence = Array.empty
   }
+
+
+elementsMailbox : Signal.Mailbox Color
+elementsMailbox = Signal.mailbox red
+
 
 
 -- UPDATE
@@ -46,6 +54,8 @@ update action model =
       { model | counter = model.counter + 1 }
     Subtract ->
       { model | counter = model.counter - 1 }
+    AddColor color ->
+      { model | inputSequence = Array.push color model.inputSequence }
     _ ->
       model
 
@@ -55,18 +65,18 @@ update action model =
 view : Dimensions -> Model -> Element
 view (w, h) model =
   Collage.collage w h
-    [ formSquare (w, h) red    Element.topLeft
-    , formSquare (w, h) yellow Element.topRight
-    , formSquare (w, h) green  Element.bottomLeft
-    , formSquare (w, h) blue   Element.bottomRight
+    [ formSquare (w, h) red    |> Collage.move (-200, 160)  --Element.topLeft
+    , formSquare (w, h) yellow |> Collage.move (200, 160)   --Element.topRight
+    , formSquare (w, h) green  |> Collage.move (-200, -160) --Element.bottomLeft
+    , formSquare (w, h) blue   |> Collage.move (200, -160)  --Element.bottomRight
     , showDebug True model
     ]
 
 
-formSquare : Dimensions -> Color -> Element.Position -> Collage.Form
-formSquare (w, h) color position =
+formSquare : Dimensions -> Color -> Collage.Form
+formSquare (w, h) color =
   drawSquare (w, h) color
-  |> Element.container w h position
+  |> Input.clickable (Signal.message elementsMailbox.address color)
   |> Collage.toForm
 
 
@@ -117,5 +127,6 @@ input =
 
     arrows = Signal.sampleOn delta (Signal.map toAction x)
     clicks = Signal.map (always Add) Mouse.clicks
+    elementClicks = Signal.map AddColor elementsMailbox.signal
   in
-    Signal.merge arrows clicks
+    Signal.mergeMany [arrows, clicks, elementClicks]
