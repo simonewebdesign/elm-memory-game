@@ -59,8 +59,7 @@ view (w, h) model =
     , formSquare (w, h) yellow Element.topRight
     , formSquare (w, h) green  Element.bottomLeft
     , formSquare (w, h) blue   Element.bottomRight
-    , Collage.toForm (Element.show model)
-      |> Collage.moveY 100  -- debugging
+    , showDebug True model
     ]
 
 
@@ -80,6 +79,17 @@ drawSquare (w, h) color =
     Element.empty
     |> Element.size width height
     |> Element.color color
+
+
+showDebug : Bool -> Model -> Collage.Form
+showDebug yes model =
+  if yes then
+    Element.show model
+    |> Collage.toForm
+    |> Collage.moveY 100
+  else
+    Element.empty
+    |> Collage.toForm
 
 
 -- MAIN
