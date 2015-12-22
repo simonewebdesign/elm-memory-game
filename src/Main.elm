@@ -20,12 +20,15 @@ type alias Model =
   , score : Int
   , sequence : Array Color
   , inputSequence : Array Color
+  , state : GameState
   }
 
 type alias Dimensions = (Int, Int)
 type alias Position = (Int, Int)
 
-type Action = NoOp | Add | Subtract | AddColor Color
+type Action = NoOp | Add | Subtract | AddColor Color | ChangeGameState
+
+type GameState = Play | Pause
 
 
 initialModel : Model
@@ -37,6 +40,7 @@ initialModel =
   , score = 0
   , sequence = Array.empty
   , inputSequence = Array.empty
+  , state = Pause
   }
 
 
@@ -44,18 +48,22 @@ elementsMailbox : Signal.Mailbox Color
 elementsMailbox = Signal.mailbox red
 
 
-
 -- UPDATE
 
 update : Action -> Model -> Model
 update action model =
   case action of
-    Add ->
-      { model | counter = model.counter + 1 }
-    Subtract ->
-      { model | counter = model.counter - 1 }
+    Add      -> { model | counter = model.counter + 1 }
+    Subtract -> { model | counter = model.counter - 1 }
+    
     AddColor color ->
       { model | inputSequence = Array.push color model.inputSequence }
+    
+    ChangeGameState ->
+      case model.state of
+        Play  -> { model | state = Pause }
+        Pause -> { model | state = Play }
+
     _ ->
       model
 
@@ -128,5 +136,10 @@ input =
     arrows = Signal.sampleOn delta (Signal.map toAction x)
     clicks = Signal.map (always Add) Mouse.clicks
     elementClicks = Signal.map AddColor elementsMailbox.signal
+    space = Signal.map (\pressed ->
+      if pressed 
+      then ChangeGameState
+      else NoOp
+    ) Keyboard.space
   in
-    Signal.mergeMany [arrows, clicks, elementClicks]
+    Signal.mergeMany [arrows, clicks, elementClicks, space]
