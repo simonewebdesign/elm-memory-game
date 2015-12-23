@@ -26,7 +26,12 @@ type alias Model =
 type alias Dimensions = (Int, Int)
 type alias Position = (Int, Int)
 
-type Action = NoOp | Add | Subtract | AddColor Color | ChangeGameState
+type Action
+  = NoOp
+  | Add
+  | Subtract
+  | AddColor Color
+  | ChangeGameState
 
 type GameState = Play | Pause
 
@@ -137,9 +142,7 @@ input =
     clicks = Signal.map (always Add) Mouse.clicks
     elementClicks = Signal.map AddColor elementsMailbox.signal
     space = Signal.map (\pressed ->
-      if pressed 
-      then ChangeGameState
-      else NoOp
+      if pressed then ChangeGameState else NoOp
     ) Keyboard.space
   in
     Signal.mergeMany [arrows, clicks, elementClicks, space]
