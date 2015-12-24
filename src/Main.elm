@@ -18,19 +18,26 @@ type alias Model =
 
   , level : Int
   , score : Int
-  , sequence : Array Int
-  , inputSequence : Array Int
+  , sequence : Array ID
+  , inputSequence : Array ID
   , state : GameState
+  , elements : List ( ID, ElementModel )
   }
 
+type alias ID = Int
+type alias ElementModel =
+  { pressed : Bool
+  , position : Position
+  , color : Color
+  }
 type alias Dimensions = (Int, Int)
-type alias Position = (Int, Int)
+type alias Position = (Float, Float)
 
 type Action
   = NoOp
   | Add
   | Subtract
-  | UpdateSequence Int
+  | Press ID
   | ChangeGameState
 
 type GameState = Play | Pause
@@ -40,7 +47,7 @@ type GameState = Play | Pause
 --  { a | id : Int, pressed : Bool }
 
 --type alias PressableElement = (Element, { id : Int, pressed : Bool })
-type alias Pressable = { id : Int, pressed : Bool }
+--type alias Pressable = { id : Int, pressed : Bool }
 
 
 initialModel : Model
@@ -53,6 +60,12 @@ initialModel =
   , sequence = Array.empty
   , inputSequence = Array.empty
   , state = Pause
+  , elements =
+    [ ( 1, { pressed = False, position = (-200, 160), color = red } )
+    , ( 2, { pressed = False, position = (200, 160), color = yellow } )
+    , ( 3, { pressed = False, position = (-200, -160), color = green } )
+    , ( 4, { pressed = False, position = (200, -160), color = blue } )
+    ]
   }
 
 
@@ -68,8 +81,16 @@ update action model =
     Add      -> { model | counter = model.counter + 1 }
     Subtract -> { model | counter = model.counter - 1 }
 
-    UpdateSequence id ->
-      { model | inputSequence = Array.push id model.inputSequence }
+    Press id ->
+      let updateElement (elemId, elemModel) =
+        if elemId == id
+          then (elemId, { elemModel | pressed = True})
+          else (elemId, { elemModel | pressed = False})
+      in
+        { model |
+          inputSequence = Array.push id model.inputSequence,
+          elements = List.map updateElement model.elements
+        }
 
     ChangeGameState ->
       case model.state of
@@ -84,25 +105,15 @@ update action model =
 
 view : Dimensions -> Model -> Element
 view (w, h) model =
-  Collage.collage w h
-  [ pressableSquare { id = 1, pressed = False } (w, h) red
-    |> Collage.toForm |> Collage.move (-200, 160)  --Element.topLeft
-
-  , pressableSquare { id = 2, pressed = False } (w, h) yellow
-    |> Collage.toForm |> Collage.move (200, 160)  --Element.topRight
-
-  , pressableSquare { id = 3, pressed = False } (w, h) green
-    |> Collage.toForm |> Collage.move (-200, -160)  --Element.bottomLeft
-
-  , pressableSquare { id = 4, pressed = False } (w, h) blue
-    |> Collage.toForm |> Collage.move (200, -160)  --Element.bottomRight
-
-  , showDebug True model
-  ]
+  let
+    elements = List.map (viewSquare (w, h)) model.elements
+    debug = showDebug True model
+  in
+    Collage.collage w h (elements ++ [debug])
 
 
-pressableSquare : Pressable -> Dimensions -> Color -> Element
-pressableSquare {id, pressed} (w, h) color =
+viewSquare : Dimensions -> (ID, ElementModel) -> Collage.Form
+viewSquare (w, h) (id, { pressed, position, color }) =
   let
     width = w // 2
     height = h // 2
@@ -110,8 +121,10 @@ pressableSquare {id, pressed} (w, h) color =
     Element.empty
     |> Element.size width height
     |> Element.color color
-    |> Element.opacity (if pressed then 1 else 0.8)
+    |> Element.opacity (if pressed then 1 else 0.2)
     |> Input.clickable (Signal.message elementIds.address id)
+    |> Collage.toForm
+    |> Collage.move position
 
 
 showDebug : Bool -> Model -> Collage.Form
@@ -149,8 +162,11 @@ input =
         _ -> NoOp
 
     arrows = Signal.sampleOn delta (Signal.map toAction x)
+
     clicks = Signal.map (always Add) Mouse.clicks
-    elementClicks = Signal.map UpdateSequence elementIds.signal
+
+    elementClicks = Signal.map Press elementIds.signal
+
     space = Signal.map (\pressed ->
       if pressed then ChangeGameState else NoOp
     ) Keyboard.space
