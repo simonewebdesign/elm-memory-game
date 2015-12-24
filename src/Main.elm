@@ -18,8 +18,8 @@ type alias Model =
 
   , level : Int
   , score : Int
-  , sequence : Array Color
-  , inputSequence : Array Color
+  , sequence : Array Int
+  , inputSequence : Array Int
   , state : GameState
   }
 
@@ -30,10 +30,17 @@ type Action
   = NoOp
   | Add
   | Subtract
-  | AddColor Color
+  | UpdateSequence Int
   | ChangeGameState
 
 type GameState = Play | Pause
+
+-- extensible record
+--type alias Pressable a =
+--  { a | id : Int, pressed : Bool }
+
+--type alias PressableElement = (Element, { id : Int, pressed : Bool })
+type alias Pressable = { id : Int, pressed : Bool }
 
 
 initialModel : Model
@@ -49,8 +56,8 @@ initialModel =
   }
 
 
-elementsMailbox : Signal.Mailbox Color
-elementsMailbox = Signal.mailbox red
+elementIds : Signal.Mailbox Int
+elementIds = Signal.mailbox 0
 
 
 -- UPDATE
@@ -60,10 +67,10 @@ update action model =
   case action of
     Add      -> { model | counter = model.counter + 1 }
     Subtract -> { model | counter = model.counter - 1 }
-    
-    AddColor color ->
-      { model | inputSequence = Array.push color model.inputSequence }
-    
+
+    UpdateSequence id ->
+      { model | inputSequence = Array.push id model.inputSequence }
+
     ChangeGameState ->
       case model.state of
         Play  -> { model | state = Pause }
@@ -78,23 +85,24 @@ update action model =
 view : Dimensions -> Model -> Element
 view (w, h) model =
   Collage.collage w h
-    [ formSquare (w, h) red    |> Collage.move (-200, 160)  --Element.topLeft
-    , formSquare (w, h) yellow |> Collage.move (200, 160)   --Element.topRight
-    , formSquare (w, h) green  |> Collage.move (-200, -160) --Element.bottomLeft
-    , formSquare (w, h) blue   |> Collage.move (200, -160)  --Element.bottomRight
-    , showDebug True model
-    ]
+  [ pressableSquare { id = 1, pressed = False } (w, h) red
+    |> Collage.toForm |> Collage.move (-200, 160)  --Element.topLeft
+
+  , pressableSquare { id = 2, pressed = False } (w, h) yellow
+    |> Collage.toForm |> Collage.move (200, 160)  --Element.topRight
+
+  , pressableSquare { id = 3, pressed = False } (w, h) green
+    |> Collage.toForm |> Collage.move (-200, -160)  --Element.bottomLeft
+
+  , pressableSquare { id = 4, pressed = False } (w, h) blue
+    |> Collage.toForm |> Collage.move (200, -160)  --Element.bottomRight
+
+  , showDebug True model
+  ]
 
 
-formSquare : Dimensions -> Color -> Collage.Form
-formSquare (w, h) color =
-  drawSquare (w, h) color
-  |> Input.clickable (Signal.message elementsMailbox.address color)
-  |> Collage.toForm
-
-
-drawSquare : Dimensions -> Color -> Element
-drawSquare (w, h) color =
+pressableSquare : Pressable -> Dimensions -> Color -> Element
+pressableSquare {id, pressed} (w, h) color =
   let
     width = w // 2
     height = h // 2
@@ -102,6 +110,8 @@ drawSquare (w, h) color =
     Element.empty
     |> Element.size width height
     |> Element.color color
+    |> Element.opacity (if pressed then 1 else 0.8)
+    |> Input.clickable (Signal.message elementIds.address id)
 
 
 showDebug : Bool -> Model -> Collage.Form
@@ -140,7 +150,7 @@ input =
 
     arrows = Signal.sampleOn delta (Signal.map toAction x)
     clicks = Signal.map (always Add) Mouse.clicks
-    elementClicks = Signal.map AddColor elementsMailbox.signal
+    elementClicks = Signal.map UpdateSequence elementIds.signal
     space = Signal.map (\pressed ->
       if pressed then ChangeGameState else NoOp
     ) Keyboard.space
