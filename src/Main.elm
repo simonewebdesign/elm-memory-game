@@ -87,9 +87,9 @@ update action model =
           then (elemId, { elemModel | pressed = True})
           else (elemId, { elemModel | pressed = False})
       in
-        { model |
-          inputSequence = Array.push id model.inputSequence,
-          elements = List.map updateElement model.elements
+        { model
+          | inputSequence = Array.push id model.inputSequence
+          , elements = List.map updateElement model.elements
         }
 
     ChangeGameState ->
