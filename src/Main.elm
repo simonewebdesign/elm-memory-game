@@ -9,6 +9,8 @@ import Time
 import Keyboard
 import Window
 import Mouse
+import Random
+--import Generators
 
 -- MODEL
 
@@ -57,9 +59,10 @@ initialModel =
 
   , level = 1
   , score = 0
-  , sequence = Array.empty
+  , sequence = initialSequence
   , inputSequence = Array.empty
   , state = Pause
+  -- TODO: rename elements to squares and create a constructor for Square
   , elements =
     [ ( 1, { pressed = False, position = (-200, 160), color = red } )
     , ( 2, { pressed = False, position = (200, 160), color = yellow } )
@@ -69,8 +72,44 @@ initialModel =
   }
 
 
-elementIds : Signal.Mailbox Int
-elementIds = Signal.mailbox 0
+elementIDs : Signal.Mailbox Int
+elementIDs = Signal.mailbox 0
+
+
+randomIDgenerator : Random.Generator ID
+randomIDgenerator =
+  Random.int 1 4
+
+
+randomID : Random.Seed -> (ID, Random.Seed)
+randomID seed =
+  Random.generate randomIDgenerator seed
+
+
+initialSequence : Array ID
+initialSequence =
+  let
+    listGenerator = Random.list 4 randomIDgenerator
+    seed = Random.initialSeed 123 -- not random, always generates [2,4,2,4]
+    (list, _) = Random.generate listGenerator seed
+  in
+    Array.fromList list
+
+  --let
+  --  (id, newSeed) = randomId model.seed
+  --in
+  --Array.repeat 4 randomID
+  --Array.foldl randomID Array.empty
+  --Array.foldl (\elem acc ->
+  --  let
+  --    (id, newSeed) = randomId 
+  --) Array.empty 
+
+
+--pop : Array a -> a
+--pop arr =
+--  let [value] = Array.slice 0 -1 arr
+--  in value
 
 
 -- UPDATE
@@ -84,9 +123,13 @@ update action model =
     Press id ->
       let updateElement (elemId, elemModel) =
         if elemId == id
-          then (elemId, { elemModel | pressed = True})
-          else (elemId, { elemModel | pressed = False})
+          then (elemId, { elemModel | pressed = True })
+          else (elemId, { elemModel | pressed = False })
       in
+        --if id /= [Array.slice 0 -1 model.sequence] then
+        --  model
+        --else
+        -- check went well, update state
         { model
           | inputSequence = Array.push id model.inputSequence
           , elements = List.map updateElement model.elements
@@ -122,7 +165,7 @@ viewSquare (w, h) (id, { pressed, position, color }) =
     |> Element.size width height
     |> Element.color color
     |> Element.opacity (if pressed then 1 else 0.2)
-    |> Input.clickable (Signal.message elementIds.address id)
+    |> Input.clickable (Signal.message elementIDs.address id)
     |> Collage.toForm
     |> Collage.move position
 
@@ -165,7 +208,7 @@ input =
 
     clicks = Signal.map (always Add) Mouse.clicks
 
-    elementClicks = Signal.map Press elementIds.signal
+    elementClicks = Signal.map Press elementIDs.signal
 
     space = Signal.map (\pressed ->
       if pressed then ChangeGameState else NoOp
