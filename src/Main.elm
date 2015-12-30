@@ -160,6 +160,7 @@ update action model =
             model
             |> nextLevel
             |> resetButtons
+            |> incrementScore
           else
             updateSequence id model
         else
@@ -196,6 +197,9 @@ resetButtons model =
   in
     { model | elements = List.map unpush model.elements }
 
+
+incrementScore : Model -> Model
+incrementScore model =
   model
 
 
