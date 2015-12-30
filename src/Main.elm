@@ -24,6 +24,7 @@ type alias Model =
   , score : Int
   , sequence : Array ID
   , inputSequence : Array ID
+  , seed : Random.Seed
   , state : GameState
   , elements : List ( ID, ElementModel )
   }
@@ -62,6 +63,7 @@ initialModel =
   , score = 0
   , sequence = initialSequence
   , inputSequence = Array.empty
+  , seed = Random.initialSeed 111
   , state = Pause
   -- TODO: rename elements to squares and create a constructor for Square
   , elements =
@@ -162,8 +164,9 @@ update action model =
             |> resetButtons
             |> incrementScore
             |> resetInputSequence
+            |> newSequence
           else
-            updateSequence id model
+            updateInputSequence id model
         else
           -- wrong! reset
           reset model
@@ -193,8 +196,8 @@ resetButtons model =
   let
     unpush button =
       case button of
-        ( id, button ) ->
-          ( id, { button | pressed = False } )
+        ( id, btnModel ) ->
+          ( id, { btnModel | pressed = False } )
   in
     { model | elements = List.map unpush model.elements }
 
@@ -209,8 +212,8 @@ resetInputSequence model =
   { model | inputSequence = initialModel.inputSequence }
 
 
-updateSequence : ID -> Model -> Model
-updateSequence id model =
+updateInputSequence : ID -> Model -> Model
+updateInputSequence id model =
   let
     updateElement (elemId, elemModel) =
       if elemId == id
@@ -221,6 +224,17 @@ updateSequence id model =
       | inputSequence = Array.push id model.inputSequence
       , elements = List.map updateElement model.elements
     }
+
+
+newSequence : Model -> Model
+newSequence model =
+  let
+    (newID, newSeed) = randomID model.seed
+  in
+  { model
+    | sequence = Array.push newID model.sequence
+    , seed = newSeed
+  }
 
 
 -- VIEW
