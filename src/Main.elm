@@ -10,6 +10,7 @@ import Keyboard
 import Window
 import Mouse
 import Random
+import Maybe
 --import Generators
 
 -- MODEL
@@ -50,7 +51,6 @@ type GameState = Play | Pause
 
 --type alias PressableElement = (Element, { id : Int, pressed : Bool })
 --type alias Pressable = { id : Int, pressed : Bool }
-
 
 initialModel : Model
 initialModel =
@@ -102,14 +102,18 @@ initialSequence =
   --Array.foldl randomID Array.empty
   --Array.foldl (\elem acc ->
   --  let
-  --    (id, newSeed) = randomId 
-  --) Array.empty 
+  --    (id, newSeed) = randomId
+  --) Array.empty
 
 
 --pop : Array a -> a
 --pop arr =
 --  let [value] = Array.slice 0 -1 arr
 --  in value
+-- Returns the array with only the last element.
+--last : Array a -> Array a
+--last a =
+--  Array.slice -1 (Array.length a) a
 
 
 -- UPDATE
@@ -121,12 +125,19 @@ update action model =
     Subtract -> { model | counter = model.counter - 1 }
 
     -- When a button is pressed, we need to check whether we are playing or not.
+    -- We can potentially avoid this first check if we make sure a button will
+    -- never be pressable if the game is paused (e.g. by putting a layer
+    -- on top that says "Game paused").
+    -- Anyway:
     -- In case we are not playing, nothing happens.
     -- If we are playing, we need to check whether a sequence is playing or not.
     ---- In case the sequence is playing, nothing happens.
     ---- If the sequence is not playing, it means we need to check whether the
     ---- inputSequence has been fully provided.
-    ------ If provided then
+    ----------------------------------------------------------------------------
+    ---- Assuming we are playing and the sequence is not playing (i.e. the game
+    ---- just got an input)
+    ------ If inputSequence has been fully provided then
     ------ Next level!
     ------ else we need to check whether we can update the inputSequence or not.
     -------- If the last input is correct then
@@ -137,19 +148,21 @@ update action model =
     -- and all the other buttons to False.
     -- This is to ensure the button gets styled correctly.
     Press id ->
-      let updateElement (elemId, elemModel) =
-        if elemId == id
-          then (elemId, { elemModel | pressed = True })
-          else (elemId, { elemModel | pressed = False })
+      -- if model.inputSequence.length == model.sequence.length then
+      let
+        index = Array.length model.inputSequence
+        sequenceID = Maybe.withDefault 0 (Array.get index model.sequence)
       in
-        --if id /= [Array.slice 0 -1 model.sequence] then
-        --  model
-        --else
-        -- check went well, update state
-        { model
-          | inputSequence = Array.push id model.inputSequence
-          , elements = List.map updateElement model.elements
-        }
+        if id == sequenceID then
+          -- correct! update
+          if Array.length model.inputSequence == Array.length model.sequence then
+            nextLevel model
+          else
+            updateSequence id model
+        else
+          -- wrong! reset
+          reset model
+
 
     ChangeGameState ->
       case model.state of
@@ -158,6 +171,27 @@ update action model =
 
     _ ->
       model
+
+
+reset model =
+  model
+
+
+nextLevel model =
+  model
+
+
+updateSequence id model =
+  let
+    updateElement (elemId, elemModel) =
+      if elemId == id
+        then (elemId, { elemModel | pressed = True })
+        else (elemId, { elemModel | pressed = False })
+  in
+    { model
+      | inputSequence = Array.push id model.inputSequence
+      , elements = List.map updateElement model.elements
+    }
 
 
 -- VIEW
