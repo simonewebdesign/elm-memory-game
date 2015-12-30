@@ -200,7 +200,7 @@ resetButtons model =
 
 incrementScore : Model -> Model
 incrementScore model =
-  model
+  { model | score = model.score + 10 ^ model.level }
 
 
 updateSequence : ID -> Model -> Model
