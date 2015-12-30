@@ -156,8 +156,10 @@ update action model =
       in
         if id == sequenceID then
           -- correct! update
-          if Array.length model.inputSequence == Array.length model.sequence then
-            nextLevel model
+          if Array.length model.inputSequence == Array.length model.sequence - 1 then
+            model
+            |> nextLevel
+            |> resetButtons
           else
             updateSequence id model
         else
@@ -181,6 +183,19 @@ reset model =
 
 nextLevel : Model -> Model
 nextLevel model =
+  { model | level = model.level + 1 }
+
+
+resetButtons : Model -> Model
+resetButtons model =
+  let
+    unpush button =
+      case button of
+        ( id, button ) ->
+          ( id, { button | pressed = False } )
+  in
+    { model | elements = List.map unpush model.elements }
+
   model
 
 
