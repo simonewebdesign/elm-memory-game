@@ -4,13 +4,14 @@ import Array exposing (Array)
 import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as Collage
 import Graphics.Input   as Input
-import Color exposing (Color, red, yellow, green, blue)
+import Color exposing (Color, red, yellow, green, blue, white)
 import Time
 import Keyboard
 import Window
 import Mouse
 import Random
 import Maybe
+import Text
 --import Generators
 
 -- MODEL
@@ -173,14 +174,17 @@ update action model =
       model
 
 
+reset : Model -> Model
 reset model =
-  model
+  initialModel
 
 
+nextLevel : Model -> Model
 nextLevel model =
   model
 
 
+updateSequence : ID -> Model -> Model
 updateSequence id model =
   let
     updateElement (elemId, elemModel) =
@@ -202,7 +206,7 @@ view (w, h) model =
     elements = List.map (viewSquare (w, h)) model.elements
     debug = showDebug True model
   in
-    Collage.collage w h (elements ++ [debug])
+    Collage.collage w h (elements ++ [debug, viewScore model])
 
 
 viewSquare : Dimensions -> (ID, ElementModel) -> Collage.Form
@@ -218,6 +222,16 @@ viewSquare (w, h) (id, { pressed, position, color }) =
     |> Input.clickable (Signal.message elementIDs.address id)
     |> Collage.toForm
     |> Collage.move position
+
+
+viewScore : Model -> Collage.Form
+viewScore model =
+  "Score: " ++ toString model.score
+  |> Text.fromString
+  |> Text.color white
+  |> Element.rightAligned
+  |> Collage.toForm
+  |> Collage.move (300, 300)
 
 
 showDebug : Bool -> Model -> Collage.Form
