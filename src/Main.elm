@@ -161,6 +161,7 @@ update action model =
             |> nextLevel
             |> resetButtons
             |> incrementScore
+            |> resetInputSequence
           else
             updateSequence id model
         else
@@ -200,7 +201,12 @@ resetButtons model =
 
 incrementScore : Model -> Model
 incrementScore model =
-  { model | score = model.score + 10 ^ model.level }
+  { model | score = model.score + 3 ^ model.level }
+
+
+resetInputSequence : Model -> Model
+resetInputSequence model =
+  { model | inputSequence = initialModel.inputSequence }
 
 
 updateSequence : ID -> Model -> Model
