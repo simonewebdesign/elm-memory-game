@@ -206,7 +206,7 @@ view (w, h) model =
     elements = List.map (viewSquare (w, h)) model.elements
     debug = showDebug True model
   in
-    Collage.collage w h (elements ++ [debug, viewScore model])
+    Collage.collage w h (elements ++ [debug, viewScore model, viewLevel model])
 
 
 viewSquare : Dimensions -> (ID, ElementModel) -> Collage.Form
@@ -232,6 +232,16 @@ viewScore model =
   |> Element.rightAligned
   |> Collage.toForm
   |> Collage.move (300, 300)
+
+
+viewLevel : Model -> Collage.Form
+viewLevel model =
+  "Level: " ++ toString model.level
+  |> Text.fromString
+  |> Text.color white
+  |> Element.rightAligned
+  |> Collage.toForm
+  |> Collage.move (-300, 300)
 
 
 showDebug : Bool -> Model -> Collage.Form
