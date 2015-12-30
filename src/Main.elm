@@ -26,11 +26,11 @@ type alias Model =
   , inputSequence : Array ID
   , seed : Random.Seed
   , state : GameState
-  , elements : List ( ID, ElementModel )
+  , buttons : List ( ID, Button )
   }
 
 type alias ID = Int
-type alias ElementModel =
+type alias Button =
   { pressed : Bool
   , position : Position
   , color : Color
@@ -65,8 +65,7 @@ initialModel =
   , inputSequence = Array.empty
   , seed = Random.initialSeed 111
   , state = Pause
-  -- TODO: rename elements to squares and create a constructor for Square
-  , elements =
+  , buttons =
     [ ( 1, { pressed = False, position = (-200, 160), color = red } )
     , ( 2, { pressed = False, position = (200, 160), color = yellow } )
     , ( 3, { pressed = False, position = (-200, -160), color = green } )
@@ -75,8 +74,8 @@ initialModel =
   }
 
 
-elementIDs : Signal.Mailbox Int
-elementIDs = Signal.mailbox 0
+buttonIDs : Signal.Mailbox Int
+buttonIDs = Signal.mailbox 0
 
 
 randomIDgenerator : Random.Generator ID
@@ -113,7 +112,7 @@ initialSequence =
 --pop arr =
 --  let [value] = Array.slice 0 -1 arr
 --  in value
--- Returns the array with only the last element.
+-- Returns the array with only the last button.
 --last : Array a -> Array a
 --last a =
 --  Array.slice -1 (Array.length a) a
@@ -199,7 +198,7 @@ resetButtons model =
         ( id, btnModel ) ->
           ( id, { btnModel | pressed = False } )
   in
-    { model | elements = List.map unpush model.elements }
+    { model | buttons = List.map unpush model.buttons }
 
 
 incrementScore : Model -> Model
@@ -222,7 +221,7 @@ updateInputSequence id model =
   in
     { model
       | inputSequence = Array.push id model.inputSequence
-      , elements = List.map updateElement model.elements
+      , buttons = List.map updateElement model.buttons
     }
 
 
@@ -242,13 +241,13 @@ newSequence model =
 view : Dimensions -> Model -> Element
 view (w, h) model =
   let
-    elements = List.map (viewSquare (w, h)) model.elements
+    buttons = List.map (viewSquare (w, h)) model.buttons
     debug = showDebug True model
   in
-    Collage.collage w h (elements ++ [debug, viewScore model, viewLevel model])
+    Collage.collage w h (buttons ++ [debug, viewScore model, viewLevel model])
 
 
-viewSquare : Dimensions -> (ID, ElementModel) -> Collage.Form
+viewSquare : Dimensions -> (ID, Button) -> Collage.Form
 viewSquare (w, h) (id, { pressed, position, color }) =
   let
     width = w // 2
@@ -258,7 +257,7 @@ viewSquare (w, h) (id, { pressed, position, color }) =
     |> Element.size width height
     |> Element.color color
     |> Element.opacity (if pressed then 1 else 0.2)
-    |> Input.clickable (Signal.message elementIDs.address id)
+    |> Input.clickable (Signal.message buttonIDs.address id)
     |> Collage.toForm
     |> Collage.move position
 
@@ -321,10 +320,10 @@ input =
 
     clicks = Signal.map (always Add) Mouse.clicks
 
-    elementClicks = Signal.map Press elementIDs.signal
+    buttonClicks = Signal.map Press buttonIDs.signal
 
     space = Signal.map (\pressed ->
       if pressed then ChangeGameState else NoOp
     ) Keyboard.space
   in
-    Signal.mergeMany [arrows, clicks, elementClicks, space]
+    Signal.mergeMany [arrows, clicks, buttonClicks, space]
