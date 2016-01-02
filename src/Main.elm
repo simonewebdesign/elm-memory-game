@@ -126,29 +126,6 @@ update action model =
     Add      -> { model | counter = model.counter + 1 }
     Subtract -> { model | counter = model.counter - 1 }
 
-    -- When a button is pressed, we need to check whether we are playing or not.
-    -- We can potentially avoid this first check if we make sure a button will
-    -- never be pressable if the game is paused (e.g. by putting a layer
-    -- on top that says "Game paused").
-    -- Anyway:
-    -- In case we are not playing, nothing happens.
-    -- If we are playing, we need to check whether a sequence is playing or not.
-    ---- In case the sequence is playing, nothing happens.
-    ---- If the sequence is not playing, it means we need to check whether the
-    ---- inputSequence has been fully provided.
-    ----------------------------------------------------------------------------
-    ---- Assuming we are playing and the sequence is not playing (i.e. the game
-    ---- just got an input)
-    ------ If inputSequence has been fully provided then
-    ------ Next level!
-    ------ else we need to check whether we can update the inputSequence or not.
-    -------- If the last input is correct then
-    -------- update the inputSequence
-    -------- else reset the game.
-    -- Additionally, we also need to update the state of the button to
-    -- pressed = True
-    -- and all the other buttons to False.
-    -- This is to ensure the button gets styled correctly.
     Press id ->
       -- if model.inputSequence.length == model.sequence.length then
       let
