@@ -12,6 +12,7 @@ import Random
 import Maybe
 import Text
 import Generators
+import Button exposing (Button)
 
 -- MODEL
 
@@ -27,14 +28,7 @@ type alias Model =
 
 type alias ID = Int
 
-type alias Button =
-  { pressed : Bool
-  , position : Position
-  , color : Color
-  }
-
 type alias Dimensions = (Int, Int)
-type alias Position = (Float, Float)
 
 type Action
   = NoOp
