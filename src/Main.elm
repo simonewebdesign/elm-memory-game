@@ -222,8 +222,6 @@ game =
 input : Signal Action
 input =
   let
-    delta = Time.fps 30
-
     buttonClicks = Signal.map Press buttonIDs.signal
 
     space = Signal.map (\pressed ->
