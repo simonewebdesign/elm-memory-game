@@ -49,12 +49,6 @@ type Action
 
 type GameState = Play | Pause
 
--- extensible record
---type alias Pressable a =
---  { a | id : Int, pressed : Bool }
-
---type alias PressableElement = (Element, { id : Int, pressed : Bool })
---type alias Pressable = { id : Int, pressed : Bool }
 
 initialModel : Model
 initialModel =
