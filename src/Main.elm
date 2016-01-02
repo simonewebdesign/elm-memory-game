@@ -8,7 +8,6 @@ import Color exposing (Color, red, yellow, green, blue, white)
 import Time
 import Keyboard
 import Window
-import Mouse
 import Random
 import Maybe
 import Text
@@ -17,10 +16,7 @@ import Generators
 -- MODEL
 
 type alias Model =
-  { color : Color
-  , counter : Int
-
-  , level : Int
+  { level : Int
   , score : Int
   , sequence : Array ID
   , inputSequence : Array ID
@@ -42,8 +38,6 @@ type alias Position = (Float, Float)
 
 type Action
   = NoOp
-  | Add
-  | Subtract
   | Press ID
   | ChangeGameState
 
@@ -52,10 +46,7 @@ type GameState = Play | Pause
 
 initialModel : Model
 initialModel =
-  { color = red
-  , counter = 0
-
-  , level = 1
+  { level = 1
   , score = 0
   , sequence = Generators.initialSequence
   , inputSequence = Array.empty
@@ -79,8 +70,8 @@ buttonIDs = Signal.mailbox 0
 update : Action -> Model -> Model
 update action model =
   case action of
-    Add      -> { model | counter = model.counter + 1 }
-    Subtract -> { model | counter = model.counter - 1 }
+    NoOp ->
+      model
 
     Press id ->
       let
@@ -107,9 +98,6 @@ update action model =
       case model.state of
         Play  -> { model | state = Pause }
         Pause -> { model | state = Play }
-
-    _ ->
-      model
 
 
 reset : Model -> Model
@@ -240,17 +228,7 @@ game =
 input : Signal Action
 input =
   let
-    x = Signal.map .x Keyboard.arrows
     delta = Time.fps 30
-    toAction n =
-      case n of
-        -1 -> Subtract
-        1 -> Add
-        _ -> NoOp
-
-    arrows = Signal.sampleOn delta (Signal.map toAction x)
-
-    clicks = Signal.map (always Add) Mouse.clicks
 
     buttonClicks = Signal.map Press buttonIDs.signal
 
@@ -258,4 +236,4 @@ input =
       if pressed then ChangeGameState else NoOp
     ) Keyboard.space
   in
-    Signal.mergeMany [arrows, clicks, buttonClicks, space]
+    Signal.mergeMany [buttonClicks, space]
