@@ -5,7 +5,6 @@ import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as Collage
 import Graphics.Input   as Input
 import Color exposing (Color, red, yellow, green, blue, white)
-import Time
 import Keyboard
 import Window
 import Random
@@ -106,13 +105,7 @@ nextLevel model =
 
 resetButtons : Model -> Model
 resetButtons model =
-  let
-    unpush button =
-      case button of
-        ( id, btnModel ) ->
-          ( id, { btnModel | pressed = False } )
-  in
-    { model | buttons = List.map unpush model.buttons }
+  { model | buttons = initialModel.buttons }
 
 
 incrementScore : Model -> Model
