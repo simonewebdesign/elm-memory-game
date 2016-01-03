@@ -6,12 +6,15 @@ import Graphics.Collage as Collage
 import Graphics.Input   as Input
 import Color exposing (Color, red, yellow, green, blue, white)
 import Keyboard
-import Window
 import Random
 import Maybe
+import Task exposing (Task)
 import Text
+import Html exposing (Html)
 import Generators
 import Button exposing (Button)
+import Effects exposing (Effects, Never)
+import StartApp
 
 -- MODEL
 
@@ -36,7 +39,6 @@ type Action
 
 type GameState = Play | Pause
 
-
 initialModel : Model
 initialModel =
   { level = 1
@@ -54,17 +56,22 @@ initialModel =
   }
 
 
+noFx : Model -> ( Model, Effects Action )
+noFx model =
+  ( model, Effects.none )
+
+
 buttonIDs : Signal.Mailbox Int
 buttonIDs = Signal.mailbox 0
 
 
 -- UPDATE
 
-update : Action -> Model -> Model
+update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
     NoOp ->
-      model
+      noFx model
 
     Press id ->
       let
@@ -74,23 +81,32 @@ update action model =
         if id == sequenceID then
           -- correct! update
           if Array.length model.inputSequence == Array.length model.sequence - 1 then
-            model
-            |> nextLevel
-            |> resetButtons
-            |> incrementScore
-            |> resetInputSequence
-            |> newSequence
+            let
+              newModel =
+                model
+                |> nextLevel
+                |> resetButtons
+                |> incrementScore
+                |> resetInputSequence
+                |> newSequence
+            in
+              noFx newModel
           else
-            updateInputSequence id model
+            noFx (updateInputSequence id model)
         else
           -- wrong! reset
-          reset model
+          noFx (reset model)
 
 
     ChangeGameState ->
       case model.state of
-        Play  -> { model | state = Pause }
-        Pause -> { model | state = Play }
+        Play  ->
+          let newModel = { model | state = Pause }
+          in noFx newModel
+
+        Pause ->
+          let newModel = { model | state = Play }
+          in noFx newModel
 
 
 reset : Model -> Model
@@ -145,13 +161,16 @@ newSequence model =
 
 -- VIEW
 
-view : Dimensions -> Model -> Element
-view (w, h) model =
+--view : Dimensions -> Model -> Element
+--view (w, h) model =
+view : Signal.Address Action -> Model -> Html
+view address model =
   let
-    buttons = List.map (viewSquare (w, h)) model.buttons
+    buttons = List.map (viewSquare (100, 100)) model.buttons
     debug = showDebug True model
   in
-    Collage.collage w h (buttons ++ [debug, viewScore model, viewLevel model])
+    Collage.collage 640 480 (buttons ++ [debug, viewScore model, viewLevel model])
+    |> Html.fromElement
 
 
 viewSquare : Dimensions -> (ID, Button) -> Collage.Form
@@ -202,18 +221,45 @@ showDebug yes model =
 
 -- MAIN
 
-main : Signal Element
+app : StartApp.App Model
+app =
+  StartApp.start
+    { init = noFx initialModel
+    , update = update
+    , view = view
+    , inputs = inputs
+    }
+
+--main : Signal Element
+--main =
+--  Signal.map2 view Window.dimensions game
+main : Signal Html
 main =
-  Signal.map2 view Window.dimensions game
+  app.html
 
 
-game : Signal Model
-game =
-  Signal.foldp update initialModel input
+port tasks : Signal (Task Never ())
+port tasks =
+  app.tasks
 
 
-input : Signal Action
-input =
+--game : Signal Model
+--game =
+--  Signal.foldp update initialModel input
+
+
+--input : Signal Action
+--input =
+--  let
+--    buttonClicks = Signal.map Press buttonIDs.signal
+
+--    space = Signal.map (\pressed ->
+--      if pressed then ChangeGameState else NoOp
+--    ) Keyboard.space
+--  in
+--    Signal.mergeMany [buttonClicks, space]
+inputs : List (Signal Action)
+inputs =
   let
     buttonClicks = Signal.map Press buttonIDs.signal
 
@@ -221,4 +267,4 @@ input =
       if pressed then ChangeGameState else NoOp
     ) Keyboard.space
   in
-    Signal.mergeMany [buttonClicks, space]
+    [buttonClicks, space]
