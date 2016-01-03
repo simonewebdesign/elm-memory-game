@@ -166,7 +166,7 @@ newSequence model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
-    buttons = List.map (viewSquare (100, 100)) model.buttons
+    buttons = List.map (viewSquare (300, 300)) model.buttons
     debug = showDebug True model
   in
     Collage.collage 640 480 (buttons ++ [debug, viewScore model, viewLevel model])
@@ -195,7 +195,7 @@ viewScore model =
   |> Text.color white
   |> Element.rightAligned
   |> Collage.toForm
-  |> Collage.move (300, 300)
+  |> Collage.move (200, 200)
 
 
 viewLevel : Model -> Collage.Form
@@ -205,7 +205,7 @@ viewLevel model =
   |> Text.color white
   |> Element.rightAligned
   |> Collage.toForm
-  |> Collage.move (-300, 300)
+  |> Collage.move (-200, 200)
 
 
 showDebug : Bool -> Model -> Collage.Form
@@ -213,7 +213,6 @@ showDebug yes model =
   if yes then
     Element.show model
     |> Collage.toForm
-    |> Collage.moveY 100
   else
     Element.empty
     |> Collage.toForm
