@@ -16,6 +16,17 @@ import Button exposing (Button)
 import Effects exposing (Effects, Never)
 import StartApp
 
+type alias ID = Int
+
+type alias Dimensions = (Int, Int)
+
+type Action
+  = NoOp
+  | Press ID
+  | ChangeGameState
+
+type GameState = Play | Pause
+
 -- MODEL
 
 type alias Model =
@@ -27,17 +38,6 @@ type alias Model =
   , state : GameState
   , buttons : List ( ID, Button )
   }
-
-type alias ID = Int
-
-type alias Dimensions = (Int, Int)
-
-type Action
-  = NoOp
-  | Press ID
-  | ChangeGameState
-
-type GameState = Play | Pause
 
 initialModel : Model
 initialModel =
@@ -161,8 +161,6 @@ newSequence model =
 
 -- VIEW
 
---view : Dimensions -> Model -> Element
---view (w, h) model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
@@ -220,6 +218,11 @@ showDebug yes model =
 
 -- MAIN
 
+main : Signal Html
+main =
+  app.html
+
+
 app : StartApp.App Model
 app =
   StartApp.start
@@ -229,34 +232,12 @@ app =
     , inputs = inputs
     }
 
---main : Signal Element
---main =
---  Signal.map2 view Window.dimensions game
-main : Signal Html
-main =
-  app.html
-
 
 port tasks : Signal (Task Never ())
 port tasks =
   app.tasks
 
 
---game : Signal Model
---game =
---  Signal.foldp update initialModel input
-
-
---input : Signal Action
---input =
---  let
---    buttonClicks = Signal.map Press buttonIDs.signal
-
---    space = Signal.map (\pressed ->
---      if pressed then ChangeGameState else NoOp
---    ) Keyboard.space
---  in
---    Signal.mergeMany [buttonClicks, space]
 inputs : List (Signal Action)
 inputs =
   let
