@@ -31,7 +31,7 @@ type Action
 type GameState = Play | Pause
 
 type alias AnimationState =
-  Maybe { prevClockTime : Time, elapsedTime : Time }
+  Maybe { prevClockTime : Time, elapsedTime : Time, step : Int }
 
 -- MODEL
 
@@ -66,6 +66,9 @@ initialModel =
 
 animationDuration : Time
 animationDuration = Time.second
+
+animationInterval : Time
+animationInterval = Time.second
 
 
 noFx : Model -> ( Model, Effects Action )
@@ -135,23 +138,88 @@ update action model =
             Nothing ->
               0
 
-            Just {elapsedTime, prevClockTime} ->
+            Just {elapsedTime, prevClockTime, step} ->
               elapsedTime + (clockTime - prevClockTime)
+
+        currentStep =
+          case model.animationState of
+            Nothing ->
+              0 -- the first step is the first index of the inputSequence array
+
+            Just {elapsedTime, prevClockTime, step} ->
+              step
       in
-        if newElapsedTime > animationDuration then
-          ( { model
-              | level = 9001
-              , animationState = Nothing
-            }
+        if newElapsedTime > animationInterval then
+          -- progress the animation to the next step, and
+          -- highlight the button
+          let
+             --get the buttonId where the array index is currentStep + 1
+             --TODO: refactor this. you can just get the button right away,
+             --and modify its model to be pressed = True
+
+            -- get the button that has the ID that's stored in model.sequence[ currentStep + 1 ]
+            -- TODO: refactor. I think it'd be simpler if you could get the button right away.
+            idOfButtonToPress =
+              model.sequence
+              |> Array.get currentStep
+              |> Maybe.withDefault 0
+
+            --currentOne button =
+            --  fst button == currentStep + 1
+
+            --buttons =
+            --  model.buttons
+            --  |> List.filter currentOne
+
+            --(buttonId, buttonModel) =
+            --  model.buttons
+            --  |> Array.get (currentStep + 1)
+            --  |> Maybe.withDefault 0
+          in
+            ( { model | animationState =
+                Just { elapsedTime = 0
+                     , prevClockTime = clockTime
+                     , step = currentStep + 1
+                     }
+              }
+              |> pressButton idOfButtonToPress
+              --|> pressButton (buttons |> List.head |> Maybe.withDefault (0, {color = white, position = (0,0), pressed = False}) |> fst)
+            , Effects.tick Tick
+            )
+
+        else if currentStep > Array.length model.sequence then
+          -- end the animation
+          ( { model | animationState = Nothing }
           , Effects.none
           )
+
         else
-          ( { model
-              | level = 30165
-              , animationState = Just { elapsedTime = newElapsedTime, prevClockTime = clockTime }
+          -- animation is still running, send another Tick
+          ( { model | animationState =
+              Just { elapsedTime = newElapsedTime
+                   , prevClockTime = clockTime
+                   , step = currentStep
+                   }
             }
           , Effects.tick Tick
           )
+
+        --if newElapsedTime > animationDuration then
+        --  -- end the animation
+        --  ( { model
+        --      | level = 9001
+        --      , animationState = Nothing
+        --    }
+        --  , Effects.none
+        --  )
+        --else
+        --  -- animation still running
+        --  ( { model
+        --      | level = 30165
+        --      , animationState = Just { elapsedTime = newElapsedTime, prevClockTime = clockTime }
+        --    }
+        --  , Effects.tick Tick
+        --  )
 
 
 reset : Model -> Model
@@ -191,6 +259,18 @@ updateInputSequence id model =
       | inputSequence = Array.push id model.inputSequence
       , buttons = List.map updateElement model.buttons
     }
+
+
+pressButton : ID -> Model -> Model
+pressButton id model =
+  let
+    maybePress (btnId, btnModel) =
+      if btnId == id then
+        ( btnId, { btnModel | pressed = True } )
+      else
+        ( btnId, { btnModel | pressed = False } )
+  in
+    { model | buttons = List.map maybePress model.buttons }
 
 
 newSequence : Model -> Model
