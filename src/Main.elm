@@ -9,6 +9,7 @@ import Keyboard
 import Random
 import Maybe
 import Task exposing (Task)
+import Time exposing (Time)
 import Text
 import Html exposing (Html)
 import Generators
@@ -24,8 +25,13 @@ type Action
   = NoOp
   | Press ID
   | ChangeGameState
+  | PlaySequence
+  | Tick Time
 
 type GameState = Play | Pause
+
+type alias AnimationState =
+  Maybe { prevClockTime : Time, elapsedTime : Time }
 
 -- MODEL
 
@@ -36,6 +42,7 @@ type alias Model =
   , inputSequence : Array ID
   , seed : Random.Seed
   , state : GameState
+  , animationState: AnimationState
   , buttons : List ( ID, Button )
   }
 
@@ -47,6 +54,7 @@ initialModel =
   , inputSequence = Array.empty
   , seed = Random.initialSeed 111
   , state = Pause
+  , animationState = Nothing
   , buttons =
     [ ( 1, { pressed = False, position = (-200, 160),  color = red } )
     , ( 2, { pressed = False, position = (200, 160),   color = yellow } )
@@ -54,6 +62,10 @@ initialModel =
     , ( 4, { pressed = False, position = (200, -160),  color = blue } )
     ]
   }
+
+
+animationDuration : Time
+animationDuration = Time.second
 
 
 noFx : Model -> ( Model, Effects Action )
@@ -107,6 +119,39 @@ update action model =
         Pause ->
           let newModel = { model | state = Play }
           in noFx newModel
+
+    PlaySequence ->
+      case model.animationState of
+        Nothing ->
+          ( model, Effects.tick Tick )
+
+        Just _ ->
+          ( model, Effects.none )
+
+    Tick clockTime ->
+      let
+        newElapsedTime =
+          case model.animationState of
+            Nothing ->
+              0
+
+            Just {elapsedTime, prevClockTime} ->
+              elapsedTime + (clockTime - prevClockTime)
+      in
+        if newElapsedTime > animationDuration then
+          ( { model
+              | level = 9001
+              , animationState = Nothing
+            }
+          , Effects.none
+          )
+        else
+          ( { model
+              | level = 30165
+              , animationState = Just { elapsedTime = newElapsedTime, prevClockTime = clockTime }
+            }
+          , Effects.tick Tick
+          )
 
 
 reset : Model -> Model
@@ -167,7 +212,7 @@ view address model =
     buttons = List.map (viewSquare (300, 300)) model.buttons
     debug = showDebug True model
   in
-    Collage.collage 640 480 (buttons ++ [debug, viewScore model, viewLevel model])
+    Collage.collage 1300 480 (buttons ++ [debug, viewScore model, viewLevel model])
     |> Html.fromElement
 
 
@@ -244,7 +289,7 @@ inputs =
     buttonClicks = Signal.map Press buttonIDs.signal
 
     space = Signal.map (\pressed ->
-      if pressed then ChangeGameState else NoOp
+      if pressed then PlaySequence else NoOp
     ) Keyboard.space
   in
     [buttonClicks, space]
