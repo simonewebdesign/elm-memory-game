@@ -63,7 +63,6 @@ initialModel =
     ]
   }
 
-
 animationInterval : Time
 animationInterval = Time.second
 
@@ -314,11 +313,16 @@ main =
 app : StartApp.App Model
 app =
   StartApp.start
-    { init = noFx initialModel
+    { init = init
     , update = update
     , view = view
     , inputs = inputs
     }
+
+
+init : ( Model, Effects Action ) 
+init =
+  (,) initialModel (Effects.tick Tick)
 
 
 port tasks : Signal (Task Never ())
