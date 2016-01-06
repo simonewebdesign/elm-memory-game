@@ -64,9 +64,6 @@ initialModel =
   }
 
 
-animationDuration : Time
-animationDuration = Time.second
-
 animationInterval : Time
 animationInterval = Time.second
 
@@ -150,32 +147,16 @@ update action model =
               step
       in
         if newElapsedTime > animationInterval then
-          -- progress the animation to the next step, and
-          -- highlight the button
           let
-             --get the buttonId where the array index is currentStep + 1
-             --TODO: refactor this. you can just get the button right away,
-             --and modify its model to be pressed = True
-
-            -- get the button that has the ID that's stored in model.sequence[ currentStep + 1 ]
+            -- get the button that has the ID that's stored in model.sequence[ currentStep ]
             -- TODO: refactor. I think it'd be simpler if you could get the button right away.
             idOfButtonToPress =
               model.sequence
               |> Array.get currentStep
               |> Maybe.withDefault 0
-
-            --currentOne button =
-            --  fst button == currentStep + 1
-
-            --buttons =
-            --  model.buttons
-            --  |> List.filter currentOne
-
-            --(buttonId, buttonModel) =
-            --  model.buttons
-            --  |> Array.get (currentStep + 1)
-            --  |> Maybe.withDefault 0
           in
+            -- progress the animation to the next step, and
+            -- highlight the button
             ( { model | animationState =
                 Just { elapsedTime = 0
                      , prevClockTime = clockTime
@@ -183,7 +164,6 @@ update action model =
                      }
               }
               |> pressButton idOfButtonToPress
-              --|> pressButton (buttons |> List.head |> Maybe.withDefault (0, {color = white, position = (0,0), pressed = False}) |> fst)
             , Effects.tick Tick
             )
 
@@ -203,23 +183,6 @@ update action model =
             }
           , Effects.tick Tick
           )
-
-        --if newElapsedTime > animationDuration then
-        --  -- end the animation
-        --  ( { model
-        --      | level = 9001
-        --      , animationState = Nothing
-        --    }
-        --  , Effects.none
-        --  )
-        --else
-        --  -- animation still running
-        --  ( { model
-        --      | level = 30165
-        --      , animationState = Just { elapsedTime = newElapsedTime, prevClockTime = clockTime }
-        --    }
-        --  , Effects.tick Tick
-        --  )
 
 
 reset : Model -> Model
