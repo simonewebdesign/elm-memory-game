@@ -42,6 +42,7 @@ type alias Model =
   , inputSequence : Array ID
   , seed : Random.Seed
   , state : GameState
+  , isGameOver : Bool
   , animationState: AnimationState
   , buttons : List ( ID, Button )
   }
@@ -54,6 +55,7 @@ initialModel =
   , inputSequence = Array.empty
   , seed = Random.initialSeed 111
   , state = Pause
+  , isGameOver = False
   , animationState = Nothing
   , buttons =
     [ ( 1, { pressed = False, position = (-200, 160),  color = red } )
@@ -85,103 +87,108 @@ update action model =
       noFx model
 
     Press id ->
-      let
-        index = Array.length model.inputSequence
-        sequenceID = Maybe.withDefault 0 (Array.get index model.sequence)
-      in
-        if id == sequenceID then
-          -- correct! update
-          if Array.length model.inputSequence == Array.length model.sequence - 1 then
-            let
-              newModel =
-                model
-                |> nextLevel
-                |> resetButtons
-                |> incrementScore
-                |> resetInputSequence
-                |> newSequence
-            in
-              noFx newModel
-          else
-            noFx (updateInputSequence id model)
-        else
-          -- wrong! reset
-          noFx (reset model)
-
+      doPress id model
 
     ChangeGameState ->
       case model.state of
         Play  ->
-          let newModel = { model | state = Pause }
-          in noFx newModel
-
+          noFx { model | state = Pause }
         Pause ->
-          let newModel = { model | state = Play }
-          in noFx newModel
+          noFx { model | state = Play }
 
     PlaySequence ->
       case model.animationState of
         Nothing ->
           ( model, Effects.tick Tick )
-
         Just _ ->
           noFx model
 
     Tick clockTime ->
+      doTick clockTime model
+
+
+doPress : ID -> Model -> ( Model, Effects Action )
+doPress id model =
+  let
+    index = Array.length model.inputSequence
+    sequenceID = Maybe.withDefault 0 (Array.get index model.sequence)
+  in
+    if id == sequenceID then
+      -- correct! update
+      if Array.length model.inputSequence == Array.length model.sequence - 1 then
+        let
+          newModel =
+            model
+            |> nextLevel
+            |> resetButtons
+            |> incrementScore
+            |> resetInputSequence
+            |> newSequence
+        in
+          noFx newModel
+      else
+        noFx (updateInputSequence id model)
+    else
+      -- wrong! reset
+      noFx (reset model)
+
+
+doTick : Time -> Model -> ( Model, Effects Action )
+doTick clockTime model =
+  let
+    newElapsedTime =
+      case model.animationState of
+        Nothing ->
+          0
+
+        Just {elapsedTime, prevClockTime, step} ->
+          elapsedTime + (clockTime - prevClockTime)
+
+    currentStep =
+      case model.animationState of
+        Nothing ->
+          0 -- the first step is the first index of the inputSequence array
+
+        Just {elapsedTime, prevClockTime, step} ->
+          step
+  in
+    if newElapsedTime > animationInterval then
       let
-        newElapsedTime =
-          case model.animationState of
-            Nothing ->
-              0
-
-            Just {elapsedTime, prevClockTime, step} ->
-              elapsedTime + (clockTime - prevClockTime)
-
-        currentStep =
-          case model.animationState of
-            Nothing ->
-              0 -- the first step is the first index of the inputSequence array
-
-            Just {elapsedTime, prevClockTime, step} ->
-              step
+        -- get the button that has the ID that's stored in model.sequence[ currentStep ]
+        -- TODO: refactor. I think it'd be simpler if you could get the button right away.
+        idOfButtonToPress =
+          model.sequence
+          |> Array.get currentStep
+          |> Maybe.withDefault 0
       in
-        if newElapsedTime > animationInterval then
-          let
-            -- get the button that has the ID that's stored in model.sequence[ currentStep ]
-            -- TODO: refactor. I think it'd be simpler if you could get the button right away.
-            idOfButtonToPress =
-              model.sequence
-              |> Array.get currentStep
-              |> Maybe.withDefault 0
-          in
-            -- progress the animation to the next step, and
-            -- highlight the button
-            ( { model | animationState =
-                Just { elapsedTime = 0
-                     , prevClockTime = clockTime
-                     , step = currentStep + 1
-                     }
-              }
-              |> pressButton idOfButtonToPress
-            , Effects.tick Tick
-            )
+        -- progress the animation to the next step, and
+        -- highlight the button
+        ( { model | animationState =
+            Just { elapsedTime = 0
+                 , prevClockTime = clockTime
+                 , step = currentStep + 1
+                 }
+          }
+          |> pressButton idOfButtonToPress
+        , Effects.tick Tick
+        )
 
-        else if currentStep > Array.length model.sequence then
-          -- end the animation
-          ( { model | animationState = Nothing }
-          , Effects.none
-          )
+    else if currentStep > Array.length model.sequence then
+      -- end the animation
+      ( { model | animationState = Nothing }
+      , Effects.none
+      )
 
-        else
-          -- animation is still running, send another Tick
-          ( { model | animationState =
-              Just { elapsedTime = newElapsedTime
-                   , prevClockTime = clockTime
-                   , step = currentStep
-                   }
-            }
-          , Effects.tick Tick
-          )
+    else
+      -- animation is still running, send another Tick
+      ( { model | animationState =
+          Just { elapsedTime = newElapsedTime
+               , prevClockTime = clockTime
+               , step = currentStep
+               }
+        }
+      , Effects.tick Tick
+      )
 
 
 reset : Model -> Model
@@ -310,7 +317,7 @@ app =
     }
 
 
-init : ( Model, Effects Action ) 
+init : ( Model, Effects Action )
 init =
   (,) initialModel (Effects.tick Tick)
 
