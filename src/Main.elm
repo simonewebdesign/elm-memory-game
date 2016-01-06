@@ -23,7 +23,7 @@ type alias Dimensions = (Int, Int)
 
 type Action
   = NoOp
-  | StartGame
+  | StartGame Time
   | Press ID
   | ChangeGameState
   | Tick Time
@@ -40,7 +40,7 @@ type alias Model =
   , score : Int
   , sequence : Array ID
   , inputSequence : Array ID
-  , seed : Random.Seed
+  , seed : Maybe Random.Seed
   , state : GameState
   , isGameOver : Bool
   , animationState: AnimationState
@@ -51,9 +51,9 @@ initialModel : Model
 initialModel =
   { level = 1
   , score = 0
-  , sequence = Generators.initialSequence
+  , sequence = Array.empty
   , inputSequence = Array.empty
-  , seed = Random.initialSeed 111
+  , seed = Nothing
   , state = Pause
   , isGameOver = False
   , animationState = Nothing
@@ -86,8 +86,24 @@ update action model =
     NoOp ->
       noFx model
 
-    StartGame ->
-      (,) { model | isGameOver = False } (Effects.tick Tick)
+    StartGame time ->
+      let
+        seed =
+          case model.seed of
+            Nothing ->
+              Random.initialSeed (round time)
+            Just s ->
+              seed
+
+        (initialSequenceArray, newSeed) = Generators.initialSequence seed
+      in
+        (,)
+          { model
+            | isGameOver = False
+            , sequence = initialSequenceArray
+            , seed = Just newSeed
+          }
+          (Effects.tick Tick)
 
     Press id ->
       doPress id model
@@ -241,11 +257,11 @@ pressButton id model =
 newSequence : Model -> Model
 newSequence model =
   let
-    (newID, newSeed) = Generators.randomID model.seed
+    (newID, newSeed) = Generators.randomID (Maybe.withDefault (Random.initialSeed 123) model.seed)
   in
   { model
     | sequence = Array.push newID model.sequence
-    , seed = newSeed
+    , seed = Just newSeed
   }
 
 
@@ -333,9 +349,9 @@ inputs : List (Signal Action)
 inputs =
   let
     buttonClicks = Signal.map Press buttonIDs.signal
-
-    space = Signal.map (\pressed ->
-      if pressed then StartGame else NoOp
-    ) Keyboard.space
+    space =
+      Keyboard.space
+      |> Time.timestamp
+      |> Signal.map (\(time, pressed) -> if pressed then StartGame time else NoOp)
   in
     [buttonClicks, space]
