@@ -293,6 +293,14 @@ viewLevel model =
   |> Collage.move (-200, 200)
 
 
+viewCenteredText : Model -> Collage.Form
+viewCenteredText model =
+  Text.fromString "Game Over\nPress spacebar to restart"
+  |> Text.color white
+  |> Element.centered
+  |> Collage.toForm
+
+
 showDebug : Bool -> Model -> Collage.Form
 showDebug yes model =
   if yes then
