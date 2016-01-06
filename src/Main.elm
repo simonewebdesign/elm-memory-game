@@ -78,7 +78,7 @@ buttonIDs = Signal.mailbox 0
 
 -- UPDATE
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> ( Model, Effects Action )
 update action model =
   case action of
     NoOp ->
@@ -125,7 +125,7 @@ update action model =
           ( model, Effects.tick Tick )
 
         Just _ ->
-          ( model, Effects.none )
+          noFx model
 
     Tick clockTime ->
       let
@@ -251,15 +251,19 @@ newSequence model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   let
-    buttons = List.map (viewSquare (300, 300)) model.buttons
-    debug = showDebug True model
+    buttons = List.map (viewButton (300, 300)) model.buttons
+    debug = Element.show model |> Collage.toForm
+    score = viewTopText ("Score: " ++ toString model.score) |> Collage.move (200, 200)
+    level = viewTopText ("Level: " ++ toString model.level) |> Collage.move (-200, 200)
+    centerText = viewCenteredText "Game Over\nPress spacebar to restart"
+    views = buttons ++ [debug, score, level, centerText]
   in
-    Collage.collage 1300 480 (buttons ++ [debug, viewScore model, viewLevel model])
+    Collage.collage 1300 480 views
     |> Html.fromElement
 
 
-viewSquare : Dimensions -> (ID, Button) -> Collage.Form
-viewSquare (w, h) (id, { pressed, position, color }) =
+viewButton : Dimensions -> (ID, Button) -> Collage.Form
+viewButton (w, h) (id, { pressed, position, color }) =
   let
     width = w // 2
     height = h // 2
@@ -273,42 +277,20 @@ viewSquare (w, h) (id, { pressed, position, color }) =
     |> Collage.move position
 
 
-viewScore : Model -> Collage.Form
-viewScore model =
-  "Score: " ++ toString model.score
-  |> Text.fromString
-  |> Text.color white
-  |> Element.rightAligned
-  |> Collage.toForm
-  |> Collage.move (200, 200)
-
-
-viewLevel : Model -> Collage.Form
-viewLevel model =
-  "Level: " ++ toString model.level
-  |> Text.fromString
-  |> Text.color white
-  |> Element.rightAligned
-  |> Collage.toForm
-  |> Collage.move (-200, 200)
-
-
-viewCenteredText : Model -> Collage.Form
-viewCenteredText model =
-  Text.fromString "Game Over\nPress spacebar to restart"
+viewCenteredText : String -> Collage.Form
+viewCenteredText str =
+  Text.fromString str
   |> Text.color white
   |> Element.centered
   |> Collage.toForm
 
 
-showDebug : Bool -> Model -> Collage.Form
-showDebug yes model =
-  if yes then
-    Element.show model
-    |> Collage.toForm
-  else
-    Element.empty
-    |> Collage.toForm
+viewTopText : String -> Collage.Form
+viewTopText str =
+  Text.fromString str
+  |> Text.color white
+  |> Element.rightAligned
+  |> Collage.toForm
 
 
 -- MAIN
