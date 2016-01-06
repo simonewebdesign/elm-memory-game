@@ -66,7 +66,7 @@ initialModel =
   }
 
 animationInterval : Time
-animationInterval = Time.second
+animationInterval = Time.second / 2
 
 
 noFx : Model -> ( Model, Effects Action )
