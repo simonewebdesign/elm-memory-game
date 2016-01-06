@@ -328,16 +328,11 @@ main =
 app : StartApp.App Model
 app =
   StartApp.start
-    { init = init
+    { init = noFx initialModel
     , update = update
     , view = view
     , inputs = inputs
     }
-
-
-init : ( Model, Effects Action )
-init =
-  (,) initialModel (Effects.tick Tick)
 
 
 port tasks : Signal (Task Never ())
