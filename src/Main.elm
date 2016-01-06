@@ -26,7 +26,6 @@ type Action
   | StartGame
   | Press ID
   | ChangeGameState
-  --| PlaySequence
   | Tick Time
 
 type GameState = Play | Pause
@@ -100,13 +99,6 @@ update action model =
         Pause ->
           noFx { model | state = Play }
 
-    --PlaySequence ->
-    --  case model.animationState of
-    --    Nothing ->
-    --      ( model, Effects.tick Tick )
-    --    Just _ ->
-    --      noFx model
-
     Tick clockTime ->
       doTick clockTime model
 
@@ -129,7 +121,7 @@ doPress id model =
             |> resetInputSequence
             |> newSequence
         in
-          noFx newModel
+          (,) newModel (Effects.tick Tick)
       else
         noFx (updateInputSequence id model)
     else
