@@ -23,9 +23,10 @@ type alias Dimensions = (Int, Int)
 
 type Action
   = NoOp
+  | StartGame
   | Press ID
   | ChangeGameState
-  | PlaySequence
+  --| PlaySequence
   | Tick Time
 
 type GameState = Play | Pause
@@ -86,6 +87,9 @@ update action model =
     NoOp ->
       noFx model
 
+    StartGame ->
+      (,) { model | isGameOver = False } (Effects.tick Tick)
+
     Press id ->
       doPress id model
 
@@ -96,12 +100,12 @@ update action model =
         Pause ->
           noFx { model | state = Play }
 
-    PlaySequence ->
-      case model.animationState of
-        Nothing ->
-          ( model, Effects.tick Tick )
-        Just _ ->
-          noFx model
+    --PlaySequence ->
+    --  case model.animationState of
+    --    Nothing ->
+    --      ( model, Effects.tick Tick )
+    --    Just _ ->
+    --      noFx model
 
     Tick clockTime ->
       doTick clockTime model
@@ -129,8 +133,8 @@ doPress id model =
       else
         noFx (updateInputSequence id model)
     else
-      -- wrong! reset
-      noFx (reset model)
+      -- wrong! end the game
+      noFx { model | isGameOver = True }
 
 
 doTick : Time -> Model -> ( Model, Effects Action )
@@ -262,8 +266,14 @@ view address model =
     debug = Element.show model |> Collage.toForm
     score = viewTopText ("Score: " ++ toString model.score) |> Collage.move (200, 200)
     level = viewTopText ("Level: " ++ toString model.level) |> Collage.move (-200, 200)
-    centerText = viewCenteredText "Game Over\nPress spacebar to restart"
-    views = buttons ++ [debug, score, level, centerText]
+    gameOverText =
+      case model.isGameOver of
+        True ->
+          viewCenteredText "Game Over\nPress spacebar to restart"
+        False ->
+          Element.empty |> Collage.toForm
+
+    views = buttons ++ [debug, score, level, gameOverText]
   in
     Collage.collage 1300 480 views
     |> Html.fromElement
@@ -333,7 +343,7 @@ inputs =
     buttonClicks = Signal.map Press buttonIDs.signal
 
     space = Signal.map (\pressed ->
-      if pressed then PlaySequence else NoOp
+      if pressed then StartGame else NoOp
     ) Keyboard.space
   in
     [buttonClicks, space]
